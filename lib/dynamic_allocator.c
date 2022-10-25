@@ -64,9 +64,7 @@ void initialize_MemBlocksList(uint32 numOfBlocks)
 	// Write your code here, remove the panic and write your code
 	LIST_INIT(&AvailableMemBlocksList);
 	for (int i = 0; i < numOfBlocks; i++)
-	{
-			LIST_INSERT_HEAD(&AvailableMemBlocksList, &(MemBlockNodes[i]));
-	}
+		LIST_INSERT_HEAD(&AvailableMemBlocksList, &(MemBlockNodes[i]));
 }
 
 //===============================
@@ -76,8 +74,14 @@ struct MemBlock *find_block(struct MemBlock_List *blockList, uint32 va)
 {
 	//TODO: [PROJECT MS1] [DYNAMIC ALLOCATOR] find_block
 	// Write your code here, remove the panic and write your code
-	panic("find_block() is not implemented yet...!!");
-
+	struct MemBlock* blk = blockList->lh_first;
+	while(blk != blockList->lh_last)
+	{
+		if(blk->sva == va)
+			return blk;
+		blk = LIST_NEXT(blk);
+	}
+	return NULL;
 }
 
 //=========================================

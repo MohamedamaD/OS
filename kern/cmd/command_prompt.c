@@ -66,13 +66,22 @@ int execute_command(char *command_string)
 			command_found = 1;
 			break;
 		}
+		if (strncmp(arguments[0], commands[i].name, strlen(arguments[0])) == 0)  //check commands[i].name contain arguments
+		{
+			cprintf("%s\n",commands[i].name);
+			command_found = 2;
+		}
 	}
 
-	if(command_found)
+	if(command_found == 1)
 	{
 		int return_value;
 		return_value = commands[i].function_to_execute(number_of_arguments, arguments);
 		return return_value;
+	}
+	else if (command_found == 2)
+	{
+		return 0;
 	}
 	else
 	{

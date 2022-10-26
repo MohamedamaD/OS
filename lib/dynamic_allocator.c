@@ -90,8 +90,30 @@ struct MemBlock *find_block(struct MemBlock_List *blockList, uint32 va)
 void insert_sorted_allocList(struct MemBlock *blockToInsert)
 {
 	//TODO: [PROJECT MS1] [DYNAMIC ALLOCATOR] insert_sorted_allocList
-	// Write your code here, remove the panic and write your code
-	panic("insert_sorted_allocList() is not implemented yet...!!");
+		uint32 length = LIST_SIZE(&AllocMemBlocksList);
+		if (length == 0 || blockToInsert->sva < LIST_FIRST(&AllocMemBlocksList)->sva)
+		{
+			LIST_INSERT_HEAD(&AllocMemBlocksList, blockToInsert);
+		}
+		else if(blockToInsert->sva > LIST_LAST(&AllocMemBlocksList)->sva)
+		{
+			LIST_INSERT_TAIL(&AllocMemBlocksList, blockToInsert);
+		}
+		else
+		{
+			struct MemBlock * elements ;
+			LIST_FOREACH(elements, &AllocMemBlocksList)
+			{
+				if (elements->sva < blockToInsert->sva)
+				{
+					if (LIST_NEXT(elements)->sva> blockToInsert->sva)
+					{
+						LIST_INSERT_AFTER(&(AllocMemBlocksList), elements, blockToInsert);
+						break;
+					}
+				}
+			}
+		}
 }
 
 //=========================================

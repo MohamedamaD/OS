@@ -123,7 +123,31 @@ struct MemBlock *alloc_block_FF(uint32 size)
 {
 	//TODO: [PROJECT MS1] [DYNAMIC ALLOCATOR] alloc_block_FF
 	// Write your code here, remove the panic and write your code
-	panic("alloc_block_FF() is not implemented yet...!!");
+	struct MemBlock* elements;
+	LIST_FOREACH(elements, &FreeMemBlocksList)
+	{
+		if (elements->size == size)
+		{
+			struct MemBlock tmp = *elements;
+			LIST_REMOVE(&FreeMemBlocksList, elements);
+			elements = &tmp;
+			return elements;
+		}
+		if (elements->size > size)//4 KB 40 KB
+		{
+			//edit block
+			elements->sva += size;
+			elements->size -= size;
+			//free block to init new block
+			LIST_REMOVE(&AvailableMemBlocksList, LIST_FIRST(&AvailableMemBlocksList));
+			struct MemBlock newBLock;
+			newBLock.size = size;
+			newBLock.sva = elements->sva - size;
+			elements = &newBLock;
+			return elements;
+		}
+	}
+	return NULL;
 }
 
 //=========================================

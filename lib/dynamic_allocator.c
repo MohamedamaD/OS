@@ -74,8 +74,13 @@ struct MemBlock *find_block(struct MemBlock_List *blockList, uint32 va)
 {
 	//TODO: [PROJECT MS1] [DYNAMIC ALLOCATOR] find_block
 	// Write your code here, remove the panic and write your code
+<<<<<<< HEAD
 	struct MemBlock* blk;
 	LIST_FOREACH(blk, blockList)
+=======
+	struct MemBlock* blk = blockList->lh_first;
+	while(blk != NULL)
+>>>>>>> 91f86b1c7f6db110a0fdfc288ce8691491d1c50c
 	{
 		if(blk->sva == va)
 			return blk;
@@ -95,8 +100,30 @@ struct MemBlock *find_block(struct MemBlock_List *blockList, uint32 va)
 void insert_sorted_allocList(struct MemBlock *blockToInsert)
 {
 	//TODO: [PROJECT MS1] [DYNAMIC ALLOCATOR] insert_sorted_allocList
-	// Write your code here, remove the panic and write your code
-	panic("insert_sorted_allocList() is not implemented yet...!!");
+		uint32 length = LIST_SIZE(&AllocMemBlocksList);
+		if (length == 0 || blockToInsert->sva < LIST_FIRST(&AllocMemBlocksList)->sva)
+		{
+			LIST_INSERT_HEAD(&AllocMemBlocksList, blockToInsert);
+		}
+		else if(blockToInsert->sva > LIST_LAST(&AllocMemBlocksList)->sva)
+		{
+			LIST_INSERT_TAIL(&AllocMemBlocksList, blockToInsert);
+		}
+		else
+		{
+			struct MemBlock * elements ;
+			LIST_FOREACH(elements, &AllocMemBlocksList)
+			{
+				if (elements->sva < blockToInsert->sva)
+				{
+					if (LIST_NEXT(elements)->sva> blockToInsert->sva)
+					{
+						LIST_INSERT_AFTER(&(AllocMemBlocksList), elements, blockToInsert);
+						break;
+					}
+				}
+			}
+		}
 }
 
 //=========================================

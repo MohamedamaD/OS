@@ -74,13 +74,18 @@ struct MemBlock *find_block(struct MemBlock_List *blockList, uint32 va)
 {
 	//TODO: [PROJECT MS1] [DYNAMIC ALLOCATOR] find_block
 	// Write your code here, remove the panic and write your code
-	struct MemBlock* blk = blockList->lh_first;
-	while(blk != blockList->lh_last)
+	struct MemBlock* blk;
+	LIST_FOREACH(blk, blockList)
 	{
 		if(blk->sva == va)
 			return blk;
-		blk = LIST_NEXT(blk);
 	}
+//	while(blk != blockList->lh_last)
+//	{
+//		if(blk->sva == va)
+//			return blk;
+//		blk = LIST_NEXT(blk);
+//	}
 	return NULL;
 }
 

@@ -155,8 +155,51 @@ struct MemBlock *alloc_block_FF(uint32 size)
 //=========================================
 struct MemBlock *alloc_block_BF(uint32 size)
 {
-	//TODO: [PROJECT MS1] [DYNAMIC ALLOCATOR] alloc_block_BF
-	// Write your code here, remove the panic and write your code
+	struct MemBlock *elements;
+	uint32 arr_size[LIST_SIZE(&FreeMemBlocksList)];
+	uint32 i = 0;
+	LIST_FOREACH(elements, &FreeMemBlocksList)
+	{
+		arr_size[i] = elements->size;
+		i++;
+		if(elements->size == size)
+		{
+			struct MemBlock tmp = *elements;
+			LIST_REMOVE(&FreeMemBlocksList, elements);
+			elements = &tmp;
+			return elements;
+		}
+	}
+	uint32 min;
+	int flag = 1;
+	for (i = 0; i < sizeof(arr_size) ;i++)
+	{
+		if (arr_size[i] > size)
+		{
+			if (flag == 1)
+			{
+				min = arr_size[i];
+				flag = 0;
+			}
+			if (arr_size[i] < min)
+				min = arr_size[i];
+		}
+	}
+	LIST_FOREACH(elements, &FreeMemBlocksList)
+	{
+		if (elements->size == min)
+		{
+			struct MemBlock* newBlock = LIST_FIRST(&AvailableMemBlocksList);
+			newBlock->sva=elements->sva;
+			newBlock->size = size;
+
+			LIST_REMOVE(&AvailableMemBlocksList, newBlock);
+
+			elements->sva = elements->sva + size;
+			elements->size = elements->size - size;
+			return newBlock;
+		}
+	}
 	return NULL;
 }
 //=========================================

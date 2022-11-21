@@ -90,29 +90,22 @@ struct MemBlock *find_block(struct MemBlock_List *blockList, uint32 va)
 void insert_sorted_allocList(struct MemBlock *blockToInsert)
 {
 	//TODO: [PROJECT MS1] [DYNAMIC ALLOCATOR] insert_sorted_allocList
-		uint32 length = LIST_SIZE(&AllocMemBlocksList);
-		if (length == 0 || blockToInsert->sva < LIST_FIRST(&AllocMemBlocksList)->sva)
-		{
+	uint32 length = LIST_SIZE(&AllocMemBlocksList);
+		if (length == 0)
 			LIST_INSERT_HEAD(&AllocMemBlocksList, blockToInsert);
-		}
 		else if(blockToInsert->sva > LIST_LAST(&AllocMemBlocksList)->sva)
-		{
 			LIST_INSERT_TAIL(&AllocMemBlocksList, blockToInsert);
-		}
+		else if (blockToInsert->sva < LIST_FIRST(&AllocMemBlocksList)->sva)
+			LIST_INSERT_HEAD(&AllocMemBlocksList, blockToInsert);
 		else
 		{
 			struct MemBlock * elements ;
 			LIST_FOREACH(elements, &AllocMemBlocksList)
-			{
-				if (elements->sva < blockToInsert->sva)
+				if (elements->sva < blockToInsert->sva && LIST_NEXT(elements)->sva> blockToInsert->sva)
 				{
-					if (LIST_NEXT(elements)->sva> blockToInsert->sva)
-					{
-						LIST_INSERT_AFTER(&(AllocMemBlocksList), elements, blockToInsert);
-						break;
-					}
+					LIST_INSERT_AFTER(&(AllocMemBlocksList), elements, blockToInsert);
+					break;
 				}
-			}
 		}
 }
 
@@ -259,45 +252,45 @@ void insert_sorted_with_merge_freeList(struct MemBlock *blockToInsert)
 		else{
 			struct MemBlock *tmp;
 
-						LIST_FOREACH(tmp, &FreeMemBlocksList){
+			LIST_FOREACH(tmp, &FreeMemBlocksList){
 
-							struct MemBlock* tmp_next = LIST_NEXT(tmp);
+				struct MemBlock* tmp_next = LIST_NEXT(tmp);
 
-							  if(blockToInsert->sva > (tmp->sva + tmp->size) && blockToInsert->sva + blockToInsert->size < (tmp_next->sva)){
+				  if(blockToInsert->sva > (tmp->sva + tmp->size) && blockToInsert->sva + blockToInsert->size < (tmp_next->sva)){
 
-									LIST_INSERT_AFTER(&FreeMemBlocksList, tmp, blockToInsert);
-									break;
-							   }
+						LIST_INSERT_AFTER(&FreeMemBlocksList, tmp, blockToInsert);
+						break;
+				   }
 
-							  else if(blockToInsert->sva == tmp->sva + tmp->size && blockToInsert->sva + blockToInsert->size == tmp_next->sva){
-								tmp->size = tmp->size + blockToInsert->size + tmp_next->size;
-								LIST_REMOVE(&FreeMemBlocksList, tmp_next);
-								blockToInsert->sva = 0 ;
-								blockToInsert->size = 0 ;
-								tmp_next->size = 0 ;
-								tmp_next->sva = 0 ;
-								LIST_INSERT_TAIL(&AvailableMemBlocksList, blockToInsert);
-								LIST_INSERT_TAIL(&AvailableMemBlocksList, tmp_next);
-						        break;
-							  }
+				  else if(blockToInsert->sva == tmp->sva + tmp->size && blockToInsert->sva + blockToInsert->size == tmp_next->sva){
+					tmp->size = tmp->size + blockToInsert->size + tmp_next->size;
+					LIST_REMOVE(&FreeMemBlocksList, tmp_next);
+					blockToInsert->sva = 0 ;
+					blockToInsert->size = 0 ;
+					tmp_next->size = 0 ;
+					tmp_next->sva = 0 ;
+					LIST_INSERT_TAIL(&AvailableMemBlocksList, blockToInsert);
+					LIST_INSERT_TAIL(&AvailableMemBlocksList, tmp_next);
+					break;
+				  }
 
-							  else if(blockToInsert->sva == tmp->sva + tmp->size){
-								tmp->size = tmp->size + blockToInsert->size;
-								blockToInsert->sva = 0;
-								blockToInsert->size = 0;
-								LIST_INSERT_TAIL(&AvailableMemBlocksList,blockToInsert);
-								break;
-							}
+				  else if(blockToInsert->sva == tmp->sva + tmp->size){
+					tmp->size = tmp->size + blockToInsert->size;
+					blockToInsert->sva = 0;
+					blockToInsert->size = 0;
+					LIST_INSERT_TAIL(&AvailableMemBlocksList,blockToInsert);
+					break;
+				}
 
-							  else if(blockToInsert->sva +blockToInsert->size == tmp->sva){
-								tmp->sva = blockToInsert->sva;
-								tmp->size = tmp->size + blockToInsert->size;
-								blockToInsert->sva= 0 ;
-								blockToInsert->size= 0 ;
-								LIST_INSERT_TAIL(&AvailableMemBlocksList, blockToInsert);
-								break;
-							}
-						}
+				  else if(blockToInsert->sva +blockToInsert->size == tmp->sva){
+					tmp->sva = blockToInsert->sva;
+					tmp->size = tmp->size + blockToInsert->size;
+					blockToInsert->sva= 0 ;
+					blockToInsert->size= 0 ;
+					LIST_INSERT_TAIL(&AvailableMemBlocksList, blockToInsert);
+					break;
+				}
+			}
 		}
 	}
 

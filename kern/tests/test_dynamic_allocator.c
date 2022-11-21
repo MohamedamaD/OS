@@ -65,8 +65,8 @@ void test_insert_sorted_allocList()
 	LIST_INIT(&AllocMemBlocksList);
 	LIST_INIT(&FreeMemBlocksList);
 
-	uint32 blocksToInsertSVAs[4]={0,0,0,0};
-	uint32 blocksToInsertSizes[4]={0,0,0,0};
+	uint32 blocksToInsertSVAs[5]={0,0,0,0,0};
+	uint32 blocksToInsertSizes[5]={0,0,0,0,0};
 	uint32 size = 0;
 	uint32 actualSize = 0;
 
@@ -96,11 +96,11 @@ void test_insert_sorted_allocList()
 	//====================================================================//
 	/*INSERT Scenario 2: Insert BLOCK_2 in the AllocMemBlocksList with sva greater than BLOCK_1*/
 	//BLOCK_2 sva = 28K
-	blocksToInsertSVAs[3] = (28*kilo);
-	blocksToInsertSizes[3] = (2*kilo);
+	blocksToInsertSVAs[4] = (28*kilo);
+	blocksToInsertSizes[4] = (2*kilo);
 	struct MemBlock blockToInsert2;
-	blockToInsert2.sva = blocksToInsertSVAs[3];
-	blockToInsert2.size = blocksToInsertSizes[3];
+	blockToInsert2.sva = blocksToInsertSVAs[4];
+	blockToInsert2.size = blocksToInsertSizes[4];
 
 	insert_sorted_allocList(&blockToInsert2);
 
@@ -163,6 +163,30 @@ void test_insert_sorted_allocList()
 	chk = check_list_data(&AllocMemBlocksList, blocksToInsertSVAs, blocksToInsertSizes, &size, actualSize);
 	if(chk != 1) panic("insert_sorted: WRONG ALLOCATION .. AllocMemBlocksList content is not correct.");
 	if(size != actualSize) panic("insert_sorted: WRONG ALLOCATION .. AllocMemBlocksList size is not correct.");
+
+	//====================================================================//
+	//INSERT Scenario 5: Insert BLOCK_5 in the AllocMemBlocksList with sva not greater than the first block only
+	//BLOCK_5 sva = 24K
+	blocksToInsertSVAs[3] = 24*kilo;
+	blocksToInsertSizes[3] = (4*kilo);
+	struct MemBlock blockToInsert5;
+	blockToInsert5.sva = blocksToInsertSVAs[3];
+	blockToInsert5.size = blocksToInsertSizes[3];
+	insert_sorted_allocList(&blockToInsert5);
+
+	//Check 1: Check size of the AllocMemBlocksList
+	actualSize = 5;
+	if (LIST_SIZE(&(AllocMemBlocksList)) != actualSize) panic("insert_sorted: WRONG ALLOCATION - wrong size for the AllocMemBlocksList.");
+
+	//Check 2: Check size of the AvailableMemBlocksList
+	if (LIST_SIZE(&(AvailableMemBlocksList)) != numOfBlocks) panic("insert_sorted: WRONG ALLOCATION - wrong size for the AvailableMemBlocksList.");
+
+	//Check 3: Check the allocated list content
+	size = 0;
+	chk = check_list_data(&AllocMemBlocksList, blocksToInsertSVAs, blocksToInsertSizes, &size, actualSize);
+	if(chk != 1) panic("insert_sorted: WRONG ALLOCATION .. AllocMemBlocksList content is not correct.");
+	if(size != actualSize) panic("insert_sorted: WRONG ALLOCATION .. AllocMemBlocksList size is not correct.");
+	//====================================================================//
 	//====================================================================//
 	//show_list_content(&AllocMemBlocksList);
 

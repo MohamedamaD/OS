@@ -10,7 +10,6 @@
 #include "kheap.h"
 #include "memory_manager.h"
 
-
 /******************************/
 /*[1] RAM CHUNKS MANIPULATION */
 /******************************/
@@ -25,10 +24,10 @@ int cut_paste_pages(uint32* page_directory, uint32 source_va, uint32 dest_va, ui
 {
 	//TODO: [PROJECT MS2] [CHUNK OPERATIONS] cut_paste_pages
 	// Write your code here, remove the panic and write your code
-	uint32 start_src = ROUNDDOWN(source_va, PAGE_SIZE);
-	uint32 start_dest = ROUNDDOWN(dest_va, PAGE_SIZE);
-	uint32 end_src = ROUNDUP(source_va + (num_of_pages*PAGE_SIZE) , PAGE_SIZE);
-	uint32 end_dest = ROUNDUP(dest_va + (num_of_pages*PAGE_SIZE) ,PAGE_SIZE);
+	uint32 start_src = source_va ;//ROUNDDOWN(source_va, PAGE_SIZE);
+	uint32 start_dest =dest_va;// ROUNDDOWN(dest_va, PAGE_SIZE);
+	uint32 end_src =source_va + (num_of_pages*PAGE_SIZE);// ROUNDUP(source_va + (num_of_pages*PAGE_SIZE) , PAGE_SIZE);
+	uint32 end_dest =dest_va + (num_of_pages*PAGE_SIZE);// ROUNDUP(dest_va + (num_of_pages*PAGE_SIZE) ,PAGE_SIZE);
 	for (uint32 i = start_dest; i < end_dest; i+=PAGE_SIZE)
 	{
 		uint32* dest_ptr_page_table = NULL;
@@ -58,32 +57,32 @@ int copy_paste_chunk(uint32* page_directory, uint32 source_va, uint32 dest_va, u
 {
 	//TODO: [PROJECT MS2] [CHUNK OPERATIONS] copy_paste_chunk
 	// Write your code here, remove the panic and write your code
-	uint32 srcstrt = ROUNDDOWN(source_va, PAGE_SIZE);
-	uint32 srcend = ROUNDUP(source_va+size, PAGE_SIZE);
-	uint32 desstrt = ROUNDDOWN(dest_va, PAGE_SIZE);
-	uint32 desend = ROUNDUP(dest_va+size, PAGE_SIZE);
-	for (uint32 i = desstrt; i < desend; i += PAGE_SIZE)
+	uint32 start_src =source_va; //ROUNDDOWN(source_va, PAGE_SIZE);//srcstrt
+	uint32 end_src =source_va+size; //ROUNDUP(source_va+size, PAGE_SIZE);//srcend
+	uint32 start_dest =dest_va; //ROUNDDOWN(dest_va, PAGE_SIZE);//desstrt
+	uint32 end_dest =dest_va+size;// ROUNDUP(dest_va+size, PAGE_SIZE);//desend
+
+
+	for (uint32 i = start_dest; i < end_dest; i += PAGE_SIZE)
 	{
-		uint32 *destable;
-		struct FrameInfo *desframe = get_frame_info(page_directory, i, &destable);
+		uint32 *dest_table;
+		struct FrameInfo *desframe = get_frame_info(page_directory, i, &dest_table);
 		if (desframe != NULL)
 		{
-			uint32 desentry = destable[PTX(i)], write = desentry & PERM_WRITEABLE;
-			if (write == 0)
+			uint32 dest_entry = dest_table[PTX(i)];
+			uint32 permition_write = dest_entry & PERM_WRITEABLE;
+			if (permition_write == 0)
 				return -1;
 		}
-		if (destable == NULL)
+		if (dest_table == NULL)
 			create_page_table(page_directory, i);
-	}
 
-	// Biggest for loop (handle creating page table + allocating frames)
-	for (uint32 i = srcstrt, j = desstrt; i < srcend && j < desend; i += PAGE_SIZE, j += PAGE_SIZE)
-	{
-		uint32 *srctable, *destable;
-		struct FrameInfo *srcframe = get_frame_info(page_directory, i, &srctable),
-						 *desframe = get_frame_info(page_directory, j, &destable);
-		uint32 allperms = pt_get_page_permissions(page_directory, i);			// you get the user permission with the rest of them
-		if (desframe == NULL && srcframe != NULL)
+		uint32 s_srs = start_src;//uint32 j = start_dest;
+		uint32 *src_table;
+		struct FrameInfo *src_frame = get_frame_info(page_directory, s_srs, &src_table);
+		struct FrameInfo *dest_frame = get_frame_info(page_directory, i, &dest_table);
+		uint32 allperms = pt_get_page_permissions(page_directory, s_srs);			// you get the user permission with the rest of them
+		if (dest_frame == NULL && src_frame != NULL)
 		{
 			struct FrameInfo *newframe;
 			int ret = allocate_frame(&newframe);
@@ -91,19 +90,22 @@ int copy_paste_chunk(uint32* page_directory, uint32 source_va, uint32 dest_va, u
 				return -1;
 			else
 			{
-				map_frame(page_directory, newframe, j, allperms);
-				pt_set_page_permissions(page_directory, j, PERM_WRITEABLE, 0);
+				map_frame(page_directory, newframe, i, allperms);
+				pt_set_page_permissions(page_directory, i, PERM_WRITEABLE, 0);
 			}
 		}
 		else{
-			pt_set_page_permissions(page_directory, j, allperms, 0);}
-	}
+			pt_set_page_permissions(page_directory, i, allperms, 0);
+		}
 
-	// Loop for copying the content
+		s_srs += PAGE_SIZE;
+	}
+	unsigned char * src;
+	unsigned char * des;
 	for(uint32 i = source_va, j = dest_va; i < source_va+size && j < dest_va+size; i++, j++)
 	{
-		unsigned char * src = (unsigned char *)(i);
-		unsigned char * des = (unsigned char *)(j);
+		src = (unsigned char *)(i);
+		des = (unsigned char *)(j);
 		*des = *src;
 	}
 
@@ -162,35 +164,28 @@ int allocate_chunk(uint32* page_directory, uint32 va, uint32 size, uint32 perms)
 {
 	//TODO: [PROJECT MS2] [CHUNK OPERATIONS] allocate_chunk
 	// Write your code here, remove the panic and write your code
-	uint32 v = ROUNDDOWN( va, PAGE_SIZE );
-	uint32 end = ROUNDUP( va + size , PAGE_SIZE );
-	for(uint32 i = v ; i < end  ; i += PAGE_SIZE ){
+	uint32 start_address = ROUNDDOWN(va, PAGE_SIZE);
+	uint32 end_address = ROUNDUP(va,PAGE_SIZE)+size;
+
+	for(uint32 i = start_address; i < end_address; i+= PAGE_SIZE)
+	{
 		uint32* ptr_page_table = NULL;
-		struct FrameInfo *ptr_Frame_Info = get_frame_info(page_directory,i,&ptr_page_table);
-		if(ptr_Frame_Info != NULL )
-			return -1 ;
-		int ret = get_page_table(page_directory,v,&ptr_page_table );
+		struct FrameInfo *ptr_Frame_Info = get_frame_info(page_directory, i, &ptr_page_table);
+		if(ptr_Frame_Info != NULL)
+			return -1;
 		if(ptr_page_table == NULL)
 			create_page_table(page_directory, i);
-//		v = v + PAGE_SIZE;
 	}
-
-		v = ROUNDDOWN( va, PAGE_SIZE );
-		end = ROUNDUP( va + size , PAGE_SIZE );
-	for(uint32 i = v ; i < end  ; i += PAGE_SIZE ){
+	for(uint32 i = start_address; i < end_address; i+= PAGE_SIZE)
+	{
 		uint32* ptr_page_table = NULL;
-		struct FrameInfo *ptr_Frame_Info = get_frame_info(page_directory,v,&ptr_page_table);
-		struct FrameInfo *allocc;
-		int ret2 = allocate_frame(&allocc);
-		if(ret2 == E_NO_MEM)
-			return -1 ;
-		int ret3 = 	map_frame(page_directory , allocc , v , perms );
-
-		if( ret3 == E_NO_MEM ){
-			free_frame(allocc);
+		struct FrameInfo *ptr_Frame_Info = get_frame_info(page_directory, i, &ptr_page_table);
+		int ret2 = allocate_frame(&ptr_Frame_Info);
+		int ret3 = 	map_frame(page_directory, ptr_Frame_Info, i, perms);
+		if( ret3 != 0){
+			free_frame(ptr_Frame_Info);
 			return -1;
 		}
-		v = v + PAGE_SIZE;
 	}
 	return 0;
 }

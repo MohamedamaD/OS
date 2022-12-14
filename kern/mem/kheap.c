@@ -14,34 +14,59 @@ void initialize_dyn_block_system()
 {
 	//TODO: [PROJECT MS2] [KERNEL HEAP] initialize_dyn_block_system
 	// your code is here, remove the panic and write your code
-	kpanic_into_prompt("initialize_dyn_block_system() is not implemented yet...!!");
-
-	//[1] Initialize two lists (AllocMemBlocksList & FreeMemBlocksList) [Hint: use LIST_INIT()]
+	LIST_INIT(&FreeMemBlocksList);
+	LIST_INIT(&AllocMemBlocksList);
 #if STATIC_MEMBLOCK_ALLOC
-	//DO NOTHING
-#else
-	/*[2] Dynamically allocate the array of MemBlockNodes
-	 * 	remember to:
-	 * 		1. set MAX_MEM_BLOCK_CNT with the chosen size of the array
-	 * 		2. allocation should be aligned on PAGE boundary
-	 * 	HINT: can use alloc_chunk(...) function
-	 */
-#endif
-	//[3] Initialize AvailableMemBlocksList by filling it with the MemBlockNodes
-	//[4] Insert a new MemBlock with the remaining heap size into the FreeMemBlocksList
-}
 
+#else
+	MAX_MEM_BLOCK_CNT = NUM_OF_KHEAP_PAGES;
+
+	uint32 MaxMemBlockNodes = (sizeof (struct MemBlock));
+	uint32 va = MaxMemBlockNodes * MAX_MEM_BLOCK_CNT;
+
+	allocate_chunk(ptr_page_directory,KERNEL_HEAP_START,ROUNDUP(va,PAGE_SIZE),PERM_WRITEABLE);
+	MemBlockNodes = (struct MemBlock*)KERNEL_HEAP_START;
+
+#endif
+	initialize_MemBlocksList(NUM_OF_KHEAP_PAGES);
+	struct MemBlock* temp = LIST_FIRST(&AvailableMemBlocksList);
+	LIST_REMOVE(&AvailableMemBlocksList, temp);
+	temp->size = ROUNDDOWN(((KERNEL_HEAP_MAX - KERNEL_HEAP_START) - va), PAGE_SIZE);
+
+	temp->sva = KERNEL_HEAP_START + ROUNDUP(va,PAGE_SIZE);
+	LIST_INSERT_HEAD(&(FreeMemBlocksList), temp);
+	//kpanic_into_prompt("initialize_dyn_block_system() is not implemented yet...!!");
+}
 void* kmalloc(unsigned int size)
 {
 	//TODO: [PROJECT MS2] [KERNEL HEAP] kmalloc
 	// your code is here, remove the panic and write your code
-	kpanic_into_prompt("kmalloc() is not implemented yet...!!");
+//	kpanic_into_prompt("kmalloc() is not implemented yet...!!");
 
 	//NOTE: All kernel heap allocations are multiples of PAGE_SIZE (4KB)
 	//refer to the project presentation and documentation for details
 	// use "isKHeapPlacementStrategyFIRSTFIT() ..." functions to check the current strategy
 
 	//change this "return" according to your answer
+	size = ROUNDUP(size, PAGE_SIZE);
+	struct MemBlock* blk;
+	if(isKHeapPlacementStrategyFIRSTFIT())
+		blk = alloc_block_FF(size);
+	else if(isKHeapPlacementStrategyBESTFIT())
+		blk = alloc_block_BF(size);
+	int ret;
+	if(blk != NULL)
+	{
+		ret = allocate_chunk(ptr_page_directory, blk->sva, size, PERM_WRITEABLE);
+		if(ret == 0){
+			insert_sorted_allocList(blk);
+			return (void *)(blk->sva);
+		}
+		else
+			return NULL;
+	}
+	else
+		return NULL;
 }
 
 void kfree(void* virtual_address)

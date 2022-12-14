@@ -19,8 +19,8 @@ inline void pt_set_page_permissions(uint32* page_directory, uint32 virtual_addre
 	{
 		ptr_page_table[PTX(virtual_address)] = ptr_page_table[PTX(virtual_address)] | (permissions_to_set);
 		ptr_page_table[PTX(virtual_address)] = ptr_page_table[PTX(virtual_address)] & (~permissions_to_clear);
-		tlb_invalidate((void *)NULL, (void *)ptr_page_table[PTX(virtual_address)]);
 	}
+	tlb_invalidate((void *)NULL, (void *)virtual_address);
 }
 
 inline int pt_get_page_permissions(uint32* page_directory, uint32 virtual_address )
@@ -47,12 +47,10 @@ inline void pt_clear_page_table_entry(uint32* page_directory, uint32 virtual_add
 	if (page_table == TABLE_IN_MEMORY)
 	{
 		ptr_page_table[PTX(virtual_address)] = 0;
-
-		tlb_invalidate((void *)NULL, (void *)PTX(virtual_address));
 	}
 	else
 		panic("Invalid va");
-
+	tlb_invalidate((void *)NULL, (void *)virtual_address);
 }
 
 /***********************************************************************************************/
